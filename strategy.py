@@ -103,8 +103,8 @@ def SimpleStrategy(dayConsider,propBuy,propSale,end,display=False):
         lastSum=sum(last[i-dayConsider:i])
         volumeSum=sum(volume[i-dayConsider:i])
         
-        lastMean=lastSum/dayConsider
-        volumeMean=volumeSum/dayConsider
+        lastMean=lastSum/(dayConsider-1)
+        volumeMean=volumeSum/(dayConsider-1)
         
         if(last[i]>lastMean and volume[i]>volumeMean):
             buying = int(own[-1]*propBuy)
@@ -127,6 +127,13 @@ def SimpleStrategy(dayConsider,propBuy,propSale,end,display=False):
             real.append(real[-1])
         if display:
             print(real[-1])
+    plt.figure()
+    plt.plot([i for i in range(len(real))],real)
+    plt.xlabel("days")
+    plt.ylabel("Earned money")
+    plt.title("Strategy")
+    plt.legend()
+    plt.show
     return own,invest,real
 
 
@@ -134,17 +141,10 @@ def SimpleStrategy(dayConsider,propBuy,propSale,end,display=False):
 
 #examples : dayConsider = 3, propBuy = 1/9, propSale = 1/3
 
-SimpleStrategy(3,1/9,1/3,len(day),True)
-print(real[-1])
+#SimpleStrategy(3,1/9,1/3,len(day),True)
+#print(real[-1])
 
-plt.figure()
-plt.plot([i for i in range(len(real))],real)
-plt.xlabel("days")
-plt.ylabel("Earned money")
-plt.title("Strategy")
-plt.legend()
 
-plt.show
 
 
 
