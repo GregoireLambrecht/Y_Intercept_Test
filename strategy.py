@@ -137,8 +137,14 @@ def SimpleStrategy(dayConsider,propBuy,propSale,end,display=False):
 SimpleStrategy(3,1/9,1/3,len(day),True)
 print(real[-1])
 
+plt.figure()
+plt.plot([i for i in range(len(real))],real)
+plt.xlabel("days")
+plt.ylabel("Earned money")
+plt.title("Strategy")
+plt.legend()
 
-
+plt.show
 
 
 
