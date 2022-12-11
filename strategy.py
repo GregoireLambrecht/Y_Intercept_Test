@@ -8,89 +8,16 @@ import pandas
 import matplotlib.pyplot as plt 
 from statistics import *
 
-
-#------------------------------------------------------------------------------
-
-#Uploding data 
-
-#------------------------------------------------------------------------------
-
-
-path = "data/data.csv"
-dataCSV = pandas.read_csv(r"data/data.csv")
-#print(dataCSV)
-
-ticker = [int(x[0:-2]) for x in dataCSV['ticker']]
-date = [x for x in dataCSV['date']]
-last = [float(x) for x in dataCSV['last']]
-volume = [float(x) for x in dataCSV['volume']]
-
-#Number of days in the ith month 
-dayBymonth=[31,28,31,30,31,30,31,31,30,31,30,31]
-
-#Return the number of days between two days separated for less than a month
-def countDays(dateOne,dateEnd):
-    monthOne=int(dateOne[5:7])
-    dayOne = int(dateOne[8:10])
-    monthEnd=int(dateEnd[5:7])
-    dayEnd = int(dateEnd[8:10])
-    if(monthEnd==monthOne):
-        return dayEnd - dayOne
-    else:
-        return dayBymonth[monthOne-1] - dayOne + dayEnd
-
-#0 -> correspond do the first date 2013-01-04 : it is the initial day
-day = [0]
-
-
-for i in range(len(date)-1):
-    day.append(day[-1] + countDays(date[i],date[i+1]))
+from dataProcessing import *
     
-#day[i] is the number of days between the initial day and the date date[i]
-    
-
-#Just plotting the data
-def plotData():
-    plt.figure()
-    plt.plot(day,last)
-    plt.title("last evolution by day")
-    plt.xlabel("number of days")
-    plt.ylabel("value of last")
-    plt.legend()
-    plt.show
-
-
-    plt.figure()
-    plt.plot(day,volume)
-    plt.title("volume evolution by day")
-    plt.xlabel("number of days")
-    plt.ylabel("value of volume")
-    plt.legend()
-    plt.show
-
-
-    
-#own[i] : the number of shares held on date date[i] (at the day day[i])
-
-#invest[i] : the money invested at the date date[i] (at the day day[i]). 
-#If you invest at the day i+1 -> invest[i+1] = invest[i] - investment
-#If you sell shares at the date i+1 -> invest[i+1] = invest[i] + recovered money
- 
-#real[i] : the money recovered plus the money invested plus the money in the market
-#If real[i]<0 : you lost money 
-#If real[i]>0 : you earn money
-    
-own=[ticker[0]]
-invest=[-own[0]*last[0]]
-real=[invest[0]+own[0]*last[0]]
 #real[0] = 0
 
 #Let's start with a really simple strategy.
 
 #In this strategy every day we take into account the market values over the previous dayConsider days
 #At the date i : 
-#I. if the volume is lower than its average value of the previous dayConsider days, you don't do anything. 
-#      --> We consider that Price moves made on low volume may be said to "lack conviction" and could be viewed as being less predictive of future returns.
+#I. if the volume is lower than its average value of the previous dayConsider days,  don't do anything. 
+#      --> We consider that price moves made on low volume may be said to "lack conviction" and are viewed as being less predictive of future returns.
 #II. else : 
     #IF the price is lower than its average value of the previous dayConsider days, you sell your shares in a proportion of propSale
     #Else you buy new shares in a proportion of propBuy
@@ -98,51 +25,94 @@ real=[invest[0]+own[0]*last[0]]
 #The goal is to find the better parameters dayConsider,propBuy,propSale, to maximize the values of real
 
 
-def SimpleStrategy(dayConsider,propBuy,propSale,end,display=False):
+def SimpleStrategy(tick,x,dayConsider,buy,propSale,end):
+    shares=[x]
+    invest=[-shares[0]*last[tick][0]]
+    real=[invest[0]+shares[0]*last[tick][0]]
     for i in range(dayConsider,end):
-        lastSum=sum(last[i-dayConsider:i])
-        volumeSum=sum(volume[i-dayConsider:i])
+        lastSum=sum(last[tick][i-dayConsider:i])
+        volumeSum=sum(volume[tick][i-dayConsider:i])
         
         lastMean=lastSum/(dayConsider-1)
         volumeMean=volumeSum/(dayConsider-1)
         
-        if(last[i]>lastMean and volume[i]>volumeMean):
-            buying = int(own[-1]*propBuy)
-            invest.append(invest[-1]- buying*last[i])
-            own.append(own[-1]+buying)
-            real.append(invest[-1] + own[-1]*last[i])
-            if display:
-                print("buy")
-            
-        if(last[i]<lastMean and volume[i]>volumeMean):
-            selling = int(own[-1]*propSale)
-            invest.append(invest[-1] + selling*last[i])
-            own.append(own[-1]-selling)
-            real.append(invest[-1] + own[-1]*last[i])
-            if display:
-                print("sell")
+        if(last[tick][i]>lastMean and volume[tick][i]>volumeMean):
+            buying = buy/last[tick][i]
+            invest.append(invest[-1]- buying*last[tick][i])
+            shares.append(shares[-1]+buying)
+            real.append(invest[-1] + shares[-1]*last[tick][i])
+
+        elif (last[tick][i]<lastMean and volume[tick][i]>volumeMean):
+            selling = int(shares[-1]*propSale)
+            invest.append(invest[-1] + selling*last[tick][i])
+            shares.append(shares[-1]-selling)
+            real.append(invest[-1] + shares[-1]*last[tick][i])
+
         else :
-            own.append(own[-1])
+            shares.append(shares[-1])
             invest.append(invest[-1])
             real.append(real[-1])
-        if display:
-            print(real[-1])
+
+    plotData(tick)
     plt.figure()
     plt.plot([i for i in range(len(real))],real)
     plt.xlabel("days")
-    plt.ylabel("Earned money")
-    plt.title("Strategy")
-    plt.legend()
+    plt.ylabel("Money")
+    plt.title("Naive Strategy on the ticker "+ticker[tick])
     plt.show
-    return own,invest,real
-
-
-#plotData()
+    return shares,invest,real
 
 #examples : dayConsider = 3, propBuy = 1/9, propSale = 1/3
 
-#SimpleStrategy(3,1/9,1/3,len(day),True)
-#print(real[-1])
+#shares,invest,real = SimpleStrategy(5,100,3,1000,1/3,alldays[-1])
+
+def PortFolioSS(initInvest,dayConsider,propSale,end):
+    ntick =len(ticker)
+    buy = initInvest/ntick
+    shares=[[buy/last[tick][0]] for tick in range(ntick)]
+    invest=[[-shares[tick][0]*last[tick][0]] for tick in range(ntick)]
+    real=[[invest[tick][0]+shares[tick][0]*last[tick][0]] for tick in range(ntick)]
+    
+    REAL = [0]
+    
+    
+    for i in range(dayConsider,end):
+        for tick in range(ntick):
+            lastSum=sum(last[tick][i-dayConsider:i])
+            volumeSum=sum(volume[tick][i-dayConsider:i])
+            
+            lastMean=lastSum/(dayConsider-1)
+            volumeMean=volumeSum/(dayConsider-1)
+            
+            if(last[tick][i]>lastMean and volume[tick][i]>volumeMean):
+                buying = buy/last[tick][i]
+                invest[tick].append(invest[tick][-1]- buying*last[tick][i])
+                shares[tick].append(shares[tick][-1]+buying)
+                real[tick].append(invest[tick][-1] + shares[tick][-1]*last[tick][i])
+
+            elif (last[tick][i]<lastMean and volume[tick][i]>volumeMean):
+                selling = int(shares[tick][-1]*propSale)
+                invest[tick].append(invest[tick][-1] + selling*last[tick][i])
+                shares[tick].append(shares[tick][-1]-selling)
+                real[tick].append(invest[tick][-1] + shares[tick][-1]*last[tick][i])
+
+
+            else :
+                shares[tick].append(shares[tick][-1])
+                invest[tick].append(invest[tick][-1])
+                real[tick].append(real[tick][-1])
+        REAL.append(REAL[-1] + sum([real[tick][-1] for tick in range(ntick)]))
+
+    plt.figure()
+    plt.plot([i for i in range(len(REAL))],REAL)
+    plt.xlabel("days")
+    plt.ylabel("Money")
+    plt.title("Naive Strategy on the total Stock ")
+    plt.show
+    return shares,invest,real
+
+#shares,invest,real = PortFolioSS(10000,3,1/2,1000)
+
 
 
 
