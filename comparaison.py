@@ -26,6 +26,7 @@ _,_,realBS = PortFolioBS(10000, 100, alldays[-1], 100, 0.5)
 _,_,realSS = PortFolioSS(10000,3,1/2,1000)
 
 #Displays the last value of the strategy on each share
+print("Displays the last value of the strategy on each share")
 print("Black Sholes Strategy :")
 print([realBS[tick][-1] for tick in range(len(ticker))])
 print("Naive Strategy :")
